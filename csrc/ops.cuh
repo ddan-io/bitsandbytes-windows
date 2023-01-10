@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <iostream>
-#include <unistd.h>
+// #include <unistd.h>
 #include <assert.h>
 
 #include <cuda_runtime_api.h>

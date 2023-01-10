@@ -117,10 +117,10 @@ class CUDASetup:
                     self.generate_instructions()
                     self.print_log_stack()
                     raise Exception('CUDA SETUP: Setup Failed!')
-                self.lib = ct.cdll.LoadLibrary(binary_path)
+                self.lib = ct.cdll.LoadLibrary(str(binary_path))
             else:
                 self.add_log_entry(f"CUDA SETUP: Loading binary {binary_path}...")
-                self.lib = ct.cdll.LoadLibrary(binary_path)
+                self.lib = ct.cdll.LoadLibrary(str(binary_path))
         except Exception as ex:
             self.add_log_entry(str(ex))
             self.print_log_stack()
@@ -148,7 +148,7 @@ def is_cublasLt_compatible(cc):
     if cc is not None:
         cc_major, cc_minor = cc.split('.')
         if int(cc_major) < 7 or (int(cc_major) == 7 and int(cc_minor) < 5):
-            cuda_setup.add_log_entry("WARNING: Compute capability < 7.5 detected! Proceeding to load CPU-only library...", is_warning=True)
+            CUDASetup.add_log_entry("WARNING: Compute capability < 7.5 detected! Proceeding to load CPU-only library...", is_warning=True)
         else:
             has_cublaslt = True
     return has_cublaslt
@@ -358,12 +358,12 @@ def get_compute_capability(cuda):
 
 
 def evaluate_cuda_setup():
-    if 'BITSANDBYTES_NOWELCOME' not in os.environ or str(os.environ['BITSANDBYTES_NOWELCOME']) == '0':
-        print('')
-        print('='*35 + 'BUG REPORT' + '='*35)
-        print('Welcome to bitsandbytes. For bug reports, please submit your error trace to: https://github.com/TimDettmers/bitsandbytes/issues')
-        print('For effortless bug reporting copy-paste your error into this form: https://docs.google.com/forms/d/e/1FAIpQLScPB8emS3Thkp66nvqwmjTEgxp8Y9ufuWTzFyr9kJ5AoI47dQ/viewform?usp=sf_link')
-        print('='*80)
+    # if 'BITSANDBYTES_NOWELCOME' not in os.environ or str(os.environ['BITSANDBYTES_NOWELCOME']) == '0':
+    #     print('')
+    #     print('='*35 + 'BUG REPORT' + '='*35)
+    #     print('Welcome to bitsandbytes. For bug reports, please submit your error trace to: https://github.com/TimDettmers/bitsandbytes/issues')
+    #     print('For effortless bug reporting copy-paste your error into this form: https://docs.google.com/forms/d/e/1FAIpQLScPB8emS3Thkp66nvqwmjTEgxp8Y9ufuWTzFyr9kJ5AoI47dQ/viewform?usp=sf_link')
+    #     print('='*80)
     if not torch.cuda.is_available(): return 'libsbitsandbytes_cpu.so', None, None, None, None
 
     cuda_setup = CUDASetup.get_instance()
@@ -372,40 +372,41 @@ def evaluate_cuda_setup():
     cc = get_compute_capability(cuda)
     cuda_version_string = get_cuda_version(cuda, cudart_path)
 
-    failure = False
-    if cudart_path is None:
-        failure = True
-        cuda_setup.add_log_entry("WARNING: No libcudart.so found! Install CUDA or the cudatoolkit package (anaconda)!", is_warning=True)
-    else:
-        cuda_setup.add_log_entry(f"CUDA SETUP: CUDA runtime path found: {cudart_path}")
-
-    if cc == '' or cc is None:
-        failure = True
-        cuda_setup.add_log_entry("WARNING: No GPU detected! Check your CUDA paths. Proceeding to load CPU-only library...", is_warning=True)
-    else:
-        cuda_setup.add_log_entry(f"CUDA SETUP: Highest compute capability among GPUs detected: {cc}")
-
-    if cuda is None:
-        failure = True
-    else:
-        cuda_setup.add_log_entry(f'CUDA SETUP: Detected CUDA version {cuda_version_string}')
-
-    # 7.5 is the minimum CC vor cublaslt
-    has_cublaslt = is_cublasLt_compatible(cc)
-
-    # TODO:
-    # (1) CUDA missing cases (no CUDA installed by CUDA driver (nvidia-smi accessible)
-    # (2) Multiple CUDA versions installed
-
-    # we use ls -l instead of nvcc to determine the cuda version
-    # since most installations will have the libcudart.so installed, but not the compiler
-
-    if failure:
-        binary_name = "libbitsandbytes_cpu.so"
-    elif has_cublaslt:
-        binary_name = f"libbitsandbytes_cuda{cuda_version_string}.so"
-    else:
-        "if not has_cublaslt (CC < 7.5), then we have to choose  _nocublaslt.so"
-        binary_name = f"libbitsandbytes_cuda{cuda_version_string}_nocublaslt.so"
-
-    return binary_name, cudart_path, cuda, cc, cuda_version_string
+    # failure = False
+    # if cudart_path is None:
+    #     failure = True
+    #     cuda_setup.add_log_entry("WARNING: No libcudart.so found! Install CUDA or the cudatoolkit package (anaconda)!", is_warning=True)
+    # else:
+    #     cuda_setup.add_log_entry(f"CUDA SETUP: CUDA runtime path found: {cudart_path}")
+    #
+    # if cc == '' or cc is None:
+    #     failure = True
+    #     cuda_setup.add_log_entry("WARNING: No GPU detected! Check your CUDA paths. Proceeding to load CPU-only library...", is_warning=True)
+    # else:
+    #     cuda_setup.add_log_entry(f"CUDA SETUP: Highest compute capability among GPUs detected: {cc}")
+    #
+    # if cuda is None:
+    #     failure = True
+    # else:
+    #     cuda_setup.add_log_entry(f'CUDA SETUP: Detected CUDA version {cuda_version_string}')
+    #
+    # # 7.5 is the minimum CC vor cublaslt
+    # has_cublaslt = is_cublasLt_compatible(cc)
+    #
+    # # TODO:
+    # # (1) CUDA missing cases (no CUDA installed by CUDA driver (nvidia-smi accessible)
+    # # (2) Multiple CUDA versions installed
+    #
+    # # we use ls -l instead of nvcc to determine the cuda version
+    # # since most installations will have the libcudart.so installed, but not the compiler
+    #
+    # if failure:
+    #     binary_name = "libbitsandbytes_cpu.so"
+    # elif has_cublaslt:
+    #     binary_name = f"libbitsandbytes_cuda{cuda_version_string}.so"
+    # else:
+    #     "if not has_cublaslt (CC < 7.5), then we have to choose  _nocublaslt.so"
+    #     binary_name = f"libbitsandbytes_cuda{cuda_version_string}_nocublaslt.so"
+    #
+    # return binary_name, cudart_path, cuda, cc, cuda_version_string
+    return "bitsandbytes.dll", cudart_path, cuda, cc, cuda_version_string
