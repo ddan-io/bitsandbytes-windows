@@ -1,6 +1,7 @@
 #include <BinSearch.h>
-#include <pthread.h>
+#include <thread>
 #include <common.h>
+#include <vector>
 
 using namespace BinSearch;
 
@@ -31,7 +32,8 @@ void quantize_cpu(float *code, float *A, float *absmax, unsigned char *out, long
     for(long long offset = 0; offset < num_blocks; offset+=thread_wave_size)
     {
       long long valid_chunks = num_blocks - offset >= thread_wave_size ? thread_wave_size : num_blocks - offset;
-      pthread_t *threads = (pthread_t *) malloc(sizeof(pthread_t) * valid_chunks);
+
+      std::vector<std::thread> threads(valid_chunks);
 
       struct quantize_block_args **args = (quantize_block_args **) malloc(valid_chunks * sizeof(quantize_block_args *));
 
@@ -55,17 +57,25 @@ void quantize_cpu(float *code, float *A, float *absmax, unsigned char *out, long
           arg->threadidx = block_idx / blocksize;
           arg->blocksize = blocksize;
 
-          pthread_create(&threads[chunks_processed], NULL, &quantize_block, (void *) arg);
+
+          threads[chunks_processed] = std::thread([&] {
+              quantize_block(arg);
+          });
+
           chunks_processed += 1;
           if(chunks_processed == valid_chunks){ break; }
       }
 
-      for (int i = 0; i < valid_chunks; i++)
-          int err = pthread_join(threads[i], NULL);
+      for (int i = 0; i < valid_chunks; i++) {
+          if (threads[i].joinable()) {
+            threads[i].join();
+          }
 
-      free(threads);
+      }
+
       for (int i = 0; i < valid_chunks; i++)
           free(args[i]);
+
       free(args);
 
     }
