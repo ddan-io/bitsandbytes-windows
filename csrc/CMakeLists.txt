@@ -7,13 +7,13 @@ add_library (bitsandbytes SHARED
 	cpu_ops.cpp
 	pythonInterface.cpp)
 
-include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../include ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/cub ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/pthread-win32/ ${CUDA_TOOLKIT_ROOT_DIR}/include)
+include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../include ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/cub ${CUDA_TOOLKIT_ROOT_DIR}/include)
 
-target_link_directories(bitsandbytes PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../dependencies/pthread-win32/build/Release/ ${CUDA_TOOLKIT_ROOT_DIR}/x64 )
+target_link_directories(bitsandbytes PUBLIC ${CUDA_TOOLKIT_ROOT_DIR}/x64 )
 add_compile_definitions(BUILD_CUDA)
 IF (WIN32)
 	set_property(TARGET bitsandbytes APPEND PROPERTY LINK_OPTIONS /OPT:NOREF) #Ensure it doesn't just toss out functions never called..
-	target_link_libraries(bitsandbytes cudart cublas cublasLt curand cusparse pthreadVC3 )
+	target_link_libraries(bitsandbytes cudart cublas cublasLt curand cusparse)
 ELSE()
 	target_link_libraries(bitsandbytes cudart cublas cublasLt curand cusparse pthread ) # pthread is a guess I'm not on linux atm to test it not gonna someone else can.
 ENDIF()
