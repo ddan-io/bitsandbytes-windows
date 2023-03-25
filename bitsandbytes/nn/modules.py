@@ -144,8 +144,8 @@ class Int8Params(torch.nn.Parameter):
         SCB=None,
     ):
         cls.has_fp16_weights = has_fp16_weights
-        cls.CB = None
-        cls.SCB = None
+        cls.CB = CB
+        cls.SCB = SCB
         if data is None:
             data = torch.empty(0)
         return torch.Tensor._make_subclass(cls, data, requires_grad)
@@ -195,6 +195,8 @@ class Int8Params(torch.nn.Parameter):
         ):
             return self.cuda(device)
         else:
+            CB = self.CB
+            SCB = self.SCB
             new_param = Int8Params(
                 super().to(
                     device=device, dtype=dtype, non_blocking=non_blocking
@@ -202,8 +204,8 @@ class Int8Params(torch.nn.Parameter):
                 requires_grad=self.requires_grad,
                 has_fp16_weights=self.has_fp16_weights,
             )
-            new_param.CB = self.CB
-            new_param.SCB = self.SCB
+            new_param.CB = CB
+            new_param.SCB = SCB
 
             return new_param
 
